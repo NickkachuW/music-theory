@@ -10,7 +10,7 @@ import math
 PAGE_W, PAGE_H = letter
 MARGIN = 0.6 * inch
 STAFF_LINE_SPACING = 8  # points between staff lines
-NOTE_SPACING = 24  # horizontal spacing between notes
+NOTE_SPACING = 18  # horizontal spacing between notes (tighter to fit ascending + descending)
 STAFF_LEFT = MARGIN + 40  # leave room for clef
 STAFF_RIGHT = PAGE_W - MARGIN
 
@@ -137,18 +137,31 @@ CHORD_TYPES = [
     ("Diminished 7th", "\u00b0", [('C',0), ('E',-1), ('G',-1), ('A',0)]),
 ]
 
-# 12 keys (concert pitch roots) with letter offsets for transposition
-ALL_KEYS = [
-    ("C",  0, 0), ("Db", 1, 1), ("D",  2, 1), ("Eb", 3, 2), ("E",  4, 2),
-    ("F",  5, 3), ("F#", 6, 3), ("Gb", 6, 4), ("G",  7, 4), ("Ab", 8, 5),
-    ("A",  9, 5), ("Bb",10, 6), ("B", 11, 6),
-]
-# Use standard 12 keys (no enharmonic duplicates for simplicity)
+# 12 written keys — using practical enharmonic spellings (Gb not F#) to avoid
+# double sharps/flats. Each entry: (name, semitone_offset_from_C, letter_offset_from_C)
 TWELVE_KEYS = [
     ("C",  0, 0), ("Db", 1, 1), ("D",  2, 1), ("Eb", 3, 2), ("E",  4, 2),
-    ("F",  5, 3), ("F#", 6, 3), ("G",  7, 4), ("Ab", 8, 5),
+    ("F",  5, 3), ("Gb", 6, 4), ("G",  7, 4), ("Ab", 8, 5),
     ("A",  9, 5), ("Bb",10, 6), ("B", 11, 6),
 ]
+
+# Map of enharmonic equivalents to standard key names
+ENHARMONIC_NORMALIZE = {
+    'Fb': 'E', 'Cb': 'B', 'B#': 'C', 'E#': 'F',
+    'F##': 'G', 'C##': 'D', 'G##': 'A', 'D##': 'E',
+    'Abb': 'G', 'Ebb': 'D', 'Bbb': 'A', 'Fbb': 'Eb',
+    'Gbb': 'F', 'Dbb': 'C', 'Cbb': 'Bb',
+}
+
+def concert_key_label(written_root_name, inst_semi, inst_letter):
+    """Given a written key root and instrument transposition, compute the concert key name.
+    Concert = written - instrument_offset, i.e. transpose DOWN by the instrument interval."""
+    letter, acc = parse_note(written_root_name)
+    reverse_semi = (12 - inst_semi) % 12
+    reverse_letter = (7 - inst_letter) % 7
+    concert_l, concert_a = transpose_note(letter, acc, reverse_semi, reverse_letter)
+    name = note_display(concert_l, concert_a)
+    return ENHARMONIC_NORMALIZE.get(name, name)
 
 # ── Drawing helpers ───────────────────────────────────────────────────
 
@@ -313,7 +326,7 @@ def draw_accidental(c, x, y, acc):
         c.drawString(x - 15, y - 4, "bb")
     c.restoreState()
 
-def draw_scale_on_staff(c, scale_notes_with_octave, staff_bottom_y, x_start, label_name, chord_sym, interval_str):
+def draw_scale_on_staff(c, scale_notes_with_octave, staff_bottom_y, x_start, label_name, chord_sym, interval_str, concert_label=""):
     """Draw a single scale on a staff."""
     staff_width = STAFF_RIGHT - MARGIN
     x_end = STAFF_RIGHT
@@ -328,7 +341,13 @@ def draw_scale_on_staff(c, scale_notes_with_octave, staff_bottom_y, x_start, lab
     c.saveState()
     c.setFont("Helvetica-Bold", 9)
     label_y = staff_bottom_y + 5 * STAFF_LINE_SPACING + 6
-    c.drawString(MARGIN, label_y, f"{chord_sym}  \u2014  {label_name}")
+    main_label = f"{chord_sym}  \u2014  {label_name}"
+    c.drawString(MARGIN, label_y, main_label)
+    if concert_label:
+        c.setFont("Helvetica", 7)
+        c.setFillColorRGB(0.4, 0.4, 0.4)
+        label_width = c.stringWidth(main_label, "Helvetica-Bold", 9)
+        c.drawString(MARGIN + label_width + 10, label_y, concert_label)
 
     # Interval pattern below staff
     c.setFont("Helvetica", 7)
@@ -336,9 +355,16 @@ def draw_scale_on_staff(c, scale_notes_with_octave, staff_bottom_y, x_start, lab
     c.drawString(MARGIN, staff_bottom_y - STAFF_LINE_SPACING * 1.8, interval_str)
     c.restoreState()
 
-    # Draw notes
+    # Draw notes — ascending then descending
+    # Build the full ascending + descending sequence
+    # Ascending is the full scale; descending omits the top note (already played) and goes back down
+    full_sequence = list(scale_notes_with_octave)
+    if len(scale_notes_with_octave) > 2:
+        descending = list(reversed(scale_notes_with_octave[:-1]))  # skip last (top) note, reverse the rest
+        full_sequence.extend(descending[1:])  # skip the second-to-top since it's already there
+
     note_x = x_start
-    for letter, acc, octave in scale_notes_with_octave:
+    for letter, acc, octave in full_sequence:
         y = staff_y_position(letter, acc, octave, staff_bottom_y)
         draw_ledger_lines(c, note_x, y, staff_bottom_y)
         draw_notehead(c, note_x, y)
@@ -347,10 +373,10 @@ def draw_scale_on_staff(c, scale_notes_with_octave, staff_bottom_y, x_start, lab
 
         # Note name below
         c.saveState()
-        c.setFont("Helvetica", 6)
+        c.setFont("Helvetica", 5)
         c.setFillColorRGB(0.4, 0.4, 0.4)
         name = note_display(letter, acc)
-        c.drawCentredString(note_x, staff_bottom_y - STAFF_LINE_SPACING * 2.8, name)
+        c.drawCentredString(note_x, staff_bottom_y - STAFF_LINE_SPACING * 2.5, name)
         c.restoreState()
 
         note_x += NOTE_SPACING
@@ -417,7 +443,7 @@ def generate_pdf(output_path):
     c.setFont("Helvetica", 11)
     c.drawCentredString(PAGE_W / 2, PAGE_H / 2 - 10, "Based on the FQBK Handbook Scale Syllabus")
     c.setFont("Helvetica", 9)
-    c.drawCentredString(PAGE_W / 2, PAGE_H / 2 - 40, "All scales shown in concert C, transposed for each instrument.")
+    c.drawCentredString(PAGE_W / 2, PAGE_H / 2 - 40, "All scales in all 12 keys, transposed for each instrument.")
     c.drawCentredString(PAGE_W / 2, PAGE_H / 2 - 55, "Note names shown below each notehead for reference.")
 
     c.setFont("Helvetica", 8)
@@ -426,50 +452,58 @@ def generate_pdf(output_path):
 
     # ── Scale Pages ───────────────────────────────────────────────
     scale_height = STAFF_LINE_SPACING * 4 + STAFF_LINE_SPACING * 6  # staff + padding
-    scales_per_page = 4
+    scales_per_page = 5
 
-    for inst_name, semi_offset, letter_offset in INSTRUMENTS:
+    for inst_name, inst_semi, inst_letter in INSTRUMENTS:
         for cat_name, scales in PARSED_CATEGORIES:
-            # Start new page for each category per instrument
-            cursor_y = new_page_with_header(c, f"{inst_name}", cat_name)
-
-            count_on_page = 0
             for scale_name, chord_sym, concert_notes in scales:
-                if count_on_page >= scales_per_page:
-                    cursor_y = new_page_with_header(c, f"{inst_name}", f"{cat_name} (cont.)")
-                    count_on_page = 0
-
-                # Transpose
-                transposed = transpose_scale(concert_notes, semi_offset, letter_offset)
-
-                # Transpose chord symbol root
-                root_letter, root_acc = parse_note(chord_sym[0] if chord_sym[0].isalpha() else 'C')
-                # Extract root from chord_sym (first letter + any accidentals)
+                # Extract chord symbol suffix (everything after the root)
                 root_end = 1
                 while root_end < len(chord_sym) and chord_sym[root_end] in ('b', '#', '\u266d', '\u266f'):
                     root_end += 1
-                root_str = chord_sym[:root_end]
                 suffix = chord_sym[root_end:]
-                root_l, root_a = parse_note(root_str)
-                new_root_l, new_root_a = transpose_note(root_l, root_a, semi_offset, letter_offset)
-                transposed_chord_sym = note_display(new_root_l, new_root_a) + suffix
 
-                # Compute interval string
+                # Compute interval string (same for all keys)
                 interval_str = get_interval_str(concert_notes)
 
-                # Choose octave and compute positions
-                start_oct = choose_octave_for_scale(transposed, inst_name)
-                notes_with_oct = compute_note_positions(transposed, start_oct)
+                # Generate this scale in all 12 written keys
+                count_on_page = 0
+                cursor_y = None
+                for key_name, key_semi, key_letter_off in TWELVE_KEYS:
+                    if count_on_page == 0 or count_on_page >= scales_per_page:
+                        page_title = f"{inst_name}"
+                        subtitle = f"{cat_name} \u2014 {scale_name}"
+                        if cursor_y is not None:
+                            subtitle += " (cont.)"
+                        cursor_y = new_page_with_header(c, page_title, subtitle)
+                        count_on_page = 0
 
-                # Calculate staff bottom y
-                staff_bottom = cursor_y - STAFF_LINE_SPACING * 4
-                note_x_start = STAFF_LEFT + 20
+                    # Build scale in this written key by transposing from C
+                    transposed = transpose_scale(concert_notes, key_semi, key_letter_off)
 
-                draw_scale_on_staff(c, notes_with_oct, staff_bottom, note_x_start,
-                                   scale_name, transposed_chord_sym, interval_str)
+                    # Build chord symbol with this key's root
+                    root_l, root_a = parse_note("C")
+                    new_root_l, new_root_a = transpose_note(root_l, root_a, key_semi, key_letter_off)
+                    written_chord_sym = note_display(new_root_l, new_root_a) + suffix
 
-                cursor_y -= scale_height + 15
-                count_on_page += 1
+                    # Concert key label
+                    ck = concert_key_label(key_name, inst_semi, inst_letter)
+                    label_with_concert = f"(Concert: {ck})"
+
+                    # Choose octave and compute positions
+                    start_oct = choose_octave_for_scale(transposed, inst_name)
+                    notes_with_oct = compute_note_positions(transposed, start_oct)
+
+                    # Calculate staff bottom y
+                    staff_bottom = cursor_y - STAFF_LINE_SPACING * 4
+                    note_x_start = STAFF_LEFT + 20
+
+                    draw_scale_on_staff(c, notes_with_oct, staff_bottom, note_x_start,
+                                       scale_name, written_chord_sym, interval_str,
+                                       concert_label=label_with_concert)
+
+                    cursor_y -= scale_height + 12
+                    count_on_page += 1
 
     # ── Chord Reference Pages ─────────────────────────────────────
     for inst_name, semi_offset, letter_offset in INSTRUMENTS:
@@ -494,7 +528,7 @@ def generate_pdf(output_path):
         c.setFont("Helvetica", 7.5)
         row_height = 14
 
-        for key_name, key_semi, key_letter_off in TWELVE_KEYS:
+        for key_idx, (key_name, key_semi, key_letter_off) in enumerate(TWELVE_KEYS):
             if cursor_y < MARGIN + 30:
                 cursor_y = new_page_with_header(c, f"Chord Reference \u2014 {inst_name}",
                                                 "Chord tones for all 12 keys (cont.)")
@@ -504,14 +538,21 @@ def generate_pdf(output_path):
                     c.drawString(col_x + i * col_w, cursor_y, h)
                 cursor_y -= 4
                 c.line(MARGIN, cursor_y, PAGE_W - MARGIN, cursor_y)
-                cursor_y -= 12
+                cursor_y -= row_height
                 c.setFont("Helvetica", 7.5)
+
+            # Alternating row background (draw BEFORE text so it doesn't cover it)
+            if key_idx % 2 == 0:
+                c.saveState()
+                c.setFillColorRGB(0.93, 0.93, 0.93)
+                c.rect(MARGIN, cursor_y - 4, PAGE_W - 2 * MARGIN, row_height, fill=1, stroke=0)
+                c.restoreState()
 
             # Transpose key name for instrument
             inst_key = transpose_root_name(key_name, semi_offset, letter_offset)
-            c.setFont("Helvetica-Bold", 8)
+            c.setFont("Helvetica-Bold", 8.5)
             c.drawString(col_x, cursor_y, inst_key)
-            c.setFont("Helvetica", 7.5)
+            c.setFont("Helvetica", 8)
 
             for ci, (chord_type_name, chord_suffix, chord_tones) in enumerate(CHORD_TYPES):
                 # Transpose chord tones from C to this key, then to instrument
@@ -522,13 +563,6 @@ def generate_pdf(output_path):
                 c.drawString(col_x + (ci + 1) * col_w, cursor_y, tone_str)
 
             cursor_y -= row_height
-
-            # Alternating row background
-            if TWELVE_KEYS.index((key_name, key_semi, key_letter_off)) % 2 == 0:
-                c.saveState()
-                c.setFillColorRGB(0.95, 0.95, 0.95)
-                c.rect(MARGIN, cursor_y + 1, PAGE_W - 2 * MARGIN, row_height, fill=1, stroke=0)
-                c.restoreState()
 
     c.save()
     print(f"PDF saved to: {output_path}")
