@@ -5,7 +5,20 @@ All scales from the FQBK handbook Scale Syllabus, transposed for Eb and Bb instr
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 import math
+import os
+
+# Register Segoe UI Symbol font for proper music glyphs (treble clef, accidentals)
+_segoe_sym_path = os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts', 'seguisym.ttf')
+pdfmetrics.registerFont(TTFont('SegoeSymbol', _segoe_sym_path))
+
+# Music glyph characters from Segoe UI Symbol
+TREBLE_CLEF = chr(0x1D11E)  # 𝄞
+SHARP_SIGN = '\u266F'       # ♯
+FLAT_SIGN = '\u266D'        # ♭
+NATURAL_SIGN = '\u266E'     # ♮
 
 PAGE_W, PAGE_H = letter
 MARGIN = 0.6 * inch
@@ -228,46 +241,11 @@ def compute_note_positions(notes, start_octave):
     return result
 
 def draw_treble_clef(c, x, staff_bottom_y):
-    """Draw a simplified treble clef symbol."""
-    # Use text-based approach with a large font
+    """Draw a treble clef using the Segoe UI Symbol font glyph."""
     c.saveState()
-    # Try to use a font that has the treble clef
-    try:
-        c.setFont("Helvetica-Bold", 28)
-    except:
-        c.setFont("Helvetica-Bold", 28)
-    # Draw a stylized G-clef using curves
-    # Simple approach: draw the & symbol or use line art
-    # Let's draw a proper-ish treble clef with bezier curves
-    by = staff_bottom_y
-    ls = STAFF_LINE_SPACING
-
-    c.setLineWidth(1.5)
-    c.setStrokeColorRGB(0, 0, 0)
+    c.setFont('SegoeSymbol', 34)
     c.setFillColorRGB(0, 0, 0)
-
-    # Treble clef approximation using bezier paths
-    cx = x + 8
-    p = c.beginPath()
-
-    # Bottom curl
-    p.moveTo(cx + 2, by - ls * 0.5)
-    p.curveTo(cx - 6, by + ls * 0.3, cx - 4, by + ls * 1.8, cx + 3, by + ls * 2.0)
-    # Main curve up
-    p.curveTo(cx + 10, by + ls * 2.2, cx + 10, by + ls * 3.2, cx + 4, by + ls * 3.8)
-    # Top curve
-    p.curveTo(cx - 2, by + ls * 4.5, cx - 8, by + ls * 3.5, cx - 6, by + ls * 2.5)
-    # Back down through center
-    p.curveTo(cx - 4, by + ls * 1.5, cx - 1, by + ls * 0.8, cx + 2, by - ls * 0.5)
-
-    c.drawPath(p, stroke=1, fill=0)
-
-    # Vertical line through clef
-    c.line(cx + 1, by - ls * 0.8, cx + 1, by + ls * 4.3)
-
-    # Small bottom circle
-    c.circle(cx, by - ls * 0.8, 2, fill=1)
-
+    c.drawString(x, staff_bottom_y - 15, TREBLE_CLEF)
     c.restoreState()
 
 def draw_staff(c, x_start, x_end, y_bottom):
@@ -312,18 +290,18 @@ def draw_ledger_lines(c, x, y, staff_bottom_y):
         line_y += ls
 
 def draw_accidental(c, x, y, acc):
-    """Draw accidental symbol to the left of a note."""
+    """Draw accidental symbol to the left of a note using proper music glyphs."""
     c.saveState()
-    c.setFont("Helvetica-Bold", 11)
+    c.setFont('SegoeSymbol', 14)
     c.setFillColorRGB(0, 0, 0)
     if acc == 1:
-        c.drawString(x - 12, y - 4, "#")
+        c.drawString(x - 12, y - 5, SHARP_SIGN)
     elif acc == -1:
-        c.drawString(x - 11, y - 4, "b")
+        c.drawString(x - 10, y - 5, FLAT_SIGN)
     elif acc == 2:
-        c.drawString(x - 17, y - 4, "##")
+        c.drawString(x - 18, y - 5, SHARP_SIGN + SHARP_SIGN)
     elif acc == -2:
-        c.drawString(x - 15, y - 4, "bb")
+        c.drawString(x - 16, y - 5, FLAT_SIGN + FLAT_SIGN)
     c.restoreState()
 
 def draw_scale_on_staff(c, scale_notes_with_octave, staff_bottom_y, x_start, label_name, chord_sym, interval_str, concert_label=""):
