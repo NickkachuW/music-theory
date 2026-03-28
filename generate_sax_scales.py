@@ -114,7 +114,7 @@ SCALE_CATEGORIES = [
         ("Minor (Dorian)", "C\u20137", "C D Eb F G A Bb C"),
         ("Pentatonic (Minor)", "C\u20137", "C Eb F G Bb C"),
         ("Bebop (Minor)", "C\u20137", "C D Eb E F G A Bb C"),
-        ("Melodic Minor (ascending)", "C\u2013\u0394", "C D Eb F G A B C"),
+        ("Melodic Minor", "C\u2013\u0394", "C D Eb F G A B C", "C Bb Ab G F Eb D C"),
         ("Bebop Minor No. 2", "C\u20136", "C D Eb F G G# A B C"),
         ("Blues Scale", "C\u20137", "C Eb F F# G Bb C"),
         ("Harmonic Minor", "C\u2013\u0394b6", "C D Eb F G Ab B C"),
@@ -133,12 +133,17 @@ SCALE_CATEGORIES = [
 ]
 
 # Parse all scales
+# Each entry can have an optional 4th element: descending notes (different from reversed ascending)
 PARSED_CATEGORIES = []
 for cat_name, scales in SCALE_CATEGORIES:
     parsed_scales = []
-    for scale_name, chord_sym, notes_str in scales:
+    for entry in scales:
+        scale_name, chord_sym, notes_str = entry[0], entry[1], entry[2]
         notes = build_scale_from_notes(notes_str.split())
-        parsed_scales.append((scale_name, chord_sym, notes))
+        desc_notes = None
+        if len(entry) > 3 and entry[3]:
+            desc_notes = build_scale_from_notes(entry[3].split())
+        parsed_scales.append((scale_name, chord_sym, notes, desc_notes))
     PARSED_CATEGORIES.append((cat_name, parsed_scales))
 
 # ── Chord data ────────────────────────────────────────────────────────
@@ -240,6 +245,21 @@ def compute_note_positions(notes, start_octave):
         prev_midi = midi
     return result
 
+def compute_note_positions_descending(notes, start_octave):
+    """Given a list of (letter, acc) for a descending scale, compute (letter, acc, octave),
+    ensuring descending order."""
+    result = []
+    octave = start_octave
+    prev_midi = 999
+    for i, (letter, acc) in enumerate(notes):
+        midi = note_to_midi(letter, acc, octave)
+        if i > 0 and midi >= prev_midi:
+            octave -= 1
+            midi = note_to_midi(letter, acc, octave)
+        result.append((letter, acc, octave))
+        prev_midi = midi
+    return result
+
 def draw_treble_clef(c, x, staff_bottom_y):
     """Draw a treble clef using the Segoe UI Symbol font glyph.
     Positioned so the curl wraps around the G line (2nd line from bottom)."""
@@ -306,7 +326,7 @@ def draw_accidental(c, x, y, acc):
         c.drawString(x - 16, y - 5, FLAT_SIGN + FLAT_SIGN)
     c.restoreState()
 
-def draw_scale_on_staff(c, scale_notes_with_octave, staff_bottom_y, x_start, label_name, chord_sym, interval_str, concert_label=""):
+def draw_scale_on_staff(c, scale_notes_with_octave, staff_bottom_y, x_start, label_name, chord_sym, interval_str, concert_label="", desc_notes=None):
     """Draw a single scale on a staff."""
     staff_width = STAFF_RIGHT - MARGIN
     x_end = STAFF_RIGHT
@@ -336,10 +356,13 @@ def draw_scale_on_staff(c, scale_notes_with_octave, staff_bottom_y, x_start, lab
     c.restoreState()
 
     # Draw notes — ascending then descending
-    # Ascending is the full scale; descending omits the top note (already played) and reverses the rest
     full_sequence = list(scale_notes_with_octave)
-    if len(scale_notes_with_octave) > 2:
-        descending = list(reversed(scale_notes_with_octave[:-1]))  # reverse all but top note
+    if desc_notes:
+        # Custom descending form (e.g. melodic minor) — skip first note (top, already played)
+        full_sequence.extend(desc_notes[1:])
+    elif len(scale_notes_with_octave) > 2:
+        # Default: reverse the ascending (omit top note, already played)
+        descending = list(reversed(scale_notes_with_octave[:-1]))
         full_sequence.extend(descending)
 
     note_x = x_start
@@ -435,7 +458,7 @@ def generate_pdf(output_path):
 
     for inst_name, inst_semi, inst_letter in INSTRUMENTS:
         for cat_name, scales in PARSED_CATEGORIES:
-            for scale_name, chord_sym, concert_notes in scales:
+            for scale_name, chord_sym, concert_notes, concert_desc_notes in scales:
                 # Extract chord symbol suffix (everything after the root)
                 root_end = 1
                 while root_end < len(chord_sym) and chord_sym[root_end] in ('b', '#', '\u266d', '\u266f'):
@@ -460,6 +483,11 @@ def generate_pdf(output_path):
                     # Build scale in this written key by transposing from C
                     transposed = transpose_scale(concert_notes, key_semi, key_letter_off)
 
+                    # Build descending notes if this scale has a custom descending form
+                    transposed_desc = None
+                    if concert_desc_notes:
+                        transposed_desc = transpose_scale(concert_desc_notes, key_semi, key_letter_off)
+
                     # Build chord symbol with this key's root
                     root_l, root_a = parse_note("C")
                     new_root_l, new_root_a = transpose_note(root_l, root_a, key_semi, key_letter_off)
@@ -473,13 +501,21 @@ def generate_pdf(output_path):
                     start_oct = choose_octave_for_scale(transposed, inst_name)
                     notes_with_oct = compute_note_positions(transposed, start_oct)
 
+                    # Compute descending positions if custom
+                    desc_with_oct = None
+                    if transposed_desc:
+                        # Descending starts from the top octave of the ascending scale
+                        top_oct = notes_with_oct[-1][2]  # octave of the top note
+                        desc_with_oct = compute_note_positions_descending(transposed_desc, top_oct)
+
                     # Calculate staff bottom y
                     staff_bottom = cursor_y - STAFF_LINE_SPACING * 4
                     note_x_start = STAFF_LEFT + 20
 
                     draw_scale_on_staff(c, notes_with_oct, staff_bottom, note_x_start,
                                        scale_name, written_chord_sym, interval_str,
-                                       concert_label=label_with_concert)
+                                       concert_label=label_with_concert,
+                                       desc_notes=desc_with_oct)
 
                     cursor_y -= scale_height + 12
                     count_on_page += 1
