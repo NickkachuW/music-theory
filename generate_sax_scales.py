@@ -246,8 +246,8 @@ def draw_treble_clef(c, x, staff_bottom_y):
     c.saveState()
     c.setFont('SegoeSymbol', 34)
     c.setFillColorRGB(0, 0, 0)
-    # G line is at staff_bottom_y + STAFF_LINE_SPACING; +4 aligns the curl
-    c.drawString(x, staff_bottom_y + STAFF_LINE_SPACING + 4, TREBLE_CLEF)
+    # G line is at staff_bottom_y + STAFF_LINE_SPACING; -4 aligns the curl
+    c.drawString(x, staff_bottom_y + STAFF_LINE_SPACING - 4, TREBLE_CLEF)
     c.restoreState()
 
 def draw_staff(c, x_start, x_end, y_bottom):
