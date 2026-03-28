@@ -356,12 +356,11 @@ def draw_scale_on_staff(c, scale_notes_with_octave, staff_bottom_y, x_start, lab
     c.restoreState()
 
     # Draw notes — ascending then descending
-    # Build the full ascending + descending sequence
-    # Ascending is the full scale; descending omits the top note (already played) and goes back down
+    # Ascending is the full scale; descending omits the top note (already played) and reverses the rest
     full_sequence = list(scale_notes_with_octave)
     if len(scale_notes_with_octave) > 2:
-        descending = list(reversed(scale_notes_with_octave[:-1]))  # skip last (top) note, reverse the rest
-        full_sequence.extend(descending[1:])  # skip the second-to-top since it's already there
+        descending = list(reversed(scale_notes_with_octave[:-1]))  # reverse all but top note
+        full_sequence.extend(descending)
 
     note_x = x_start
     for letter, acc, octave in full_sequence:
