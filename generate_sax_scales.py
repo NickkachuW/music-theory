@@ -241,11 +241,13 @@ def compute_note_positions(notes, start_octave):
     return result
 
 def draw_treble_clef(c, x, staff_bottom_y):
-    """Draw a treble clef using the Segoe UI Symbol font glyph."""
+    """Draw a treble clef using the Segoe UI Symbol font glyph.
+    Positioned so the curl wraps around the G line (2nd line from bottom)."""
     c.saveState()
     c.setFont('SegoeSymbol', 34)
     c.setFillColorRGB(0, 0, 0)
-    c.drawString(x, staff_bottom_y - 15, TREBLE_CLEF)
+    # G line is at staff_bottom_y + STAFF_LINE_SPACING; +4 aligns the curl
+    c.drawString(x, staff_bottom_y + STAFF_LINE_SPACING + 4, TREBLE_CLEF)
     c.restoreState()
 
 def draw_staff(c, x_start, x_end, y_bottom):
