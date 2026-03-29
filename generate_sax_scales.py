@@ -425,8 +425,31 @@ def transpose_root_name(root_name, semitone_offset, letter_offset):
 
 # ── PDF Generation ────────────────────────────────────────────────────
 
-def new_page_with_header(c, title, subtitle=""):
-    c.showPage()
+class PageTracker:
+    """Track page numbers and collect TOC entries."""
+    def __init__(self):
+        self.page_num = 0  # current page (0 = title, incremented on showPage)
+        self.toc_entries = []  # (level, label, scale_names, page_num)
+
+    def new_page(self, c):
+        c.showPage()
+        self.page_num += 1
+
+    def draw_page_number(self, c):
+        """Draw page number at bottom center."""
+        if self.page_num > 0:  # skip title page
+            c.saveState()
+            c.setFont("Helvetica", 8)
+            c.setFillColorRGB(0.4, 0.4, 0.4)
+            c.drawCentredString(PAGE_W / 2, MARGIN / 2, str(self.page_num))
+            c.restoreState()
+
+    def add_toc_entry(self, level, label, scale_names=None):
+        self.toc_entries.append((level, label, scale_names, self.page_num))
+
+def new_page_with_header(c, tracker, title, subtitle=""):
+    tracker.new_page(c)
+    tracker.draw_page_number(c)
     c.setFont("Helvetica-Bold", 16)
     c.drawCentredString(PAGE_W / 2, PAGE_H - MARGIN - 10, title)
     if subtitle:
@@ -434,41 +457,92 @@ def new_page_with_header(c, title, subtitle=""):
         c.drawCentredString(PAGE_W / 2, PAGE_H - MARGIN - 26, subtitle)
     return PAGE_H - MARGIN - 50  # return starting y for content
 
-def generate_pdf(output_path):
-    c = canvas.Canvas(output_path, pagesize=letter)
+def draw_toc(c, tracker, toc_entries):
+    """Draw hybrid table of contents pages."""
+    tracker.new_page(c)
+    tracker.draw_page_number(c)
+    c.setFont("Helvetica-Bold", 18)
+    c.drawCentredString(PAGE_W / 2, PAGE_H - MARGIN - 10, "Table of Contents")
+    cursor_y = PAGE_H - MARGIN - 45
 
-    # ── Title Page ────────────────────────────────────────────────
-    c.setFont("Helvetica-Bold", 24)
-    c.drawCentredString(PAGE_W / 2, PAGE_H / 2 + 60, "Scale & Chord Reference")
-    c.setFont("Helvetica", 16)
-    c.drawCentredString(PAGE_W / 2, PAGE_H / 2 + 30, "for Alto Saxophone & Tenor Saxophone")
-    c.setFont("Helvetica", 11)
-    c.drawCentredString(PAGE_W / 2, PAGE_H / 2 - 10, "Based on the FQBK Handbook Scale Syllabus")
-    c.setFont("Helvetica", 9)
-    c.drawCentredString(PAGE_W / 2, PAGE_H / 2 - 40, "All scales in all 12 keys, transposed for each instrument.")
-    c.drawCentredString(PAGE_W / 2, PAGE_H / 2 - 55, "Note names shown below each notehead for reference.")
+    for level, label, scale_names, page_num in toc_entries:
+        if cursor_y < MARGIN + 60:
+            tracker.new_page(c)
+            tracker.draw_page_number(c)
+            c.setFont("Helvetica-Bold", 18)
+            c.drawCentredString(PAGE_W / 2, PAGE_H - MARGIN - 10, "Table of Contents (cont.)")
+            cursor_y = PAGE_H - MARGIN - 45
 
-    c.setFont("Helvetica", 8)
-    c.drawCentredString(PAGE_W / 2, MARGIN + 20,
-        "Legend: W = Whole Step, H = Half Step, m3 = Minor Third (3 half steps)")
+        if level == 0:
+            # Instrument heading
+            cursor_y -= 8
+            c.setFont("Helvetica-Bold", 12)
+            c.setFillColorRGB(0, 0, 0)
+            c.drawString(MARGIN, cursor_y, label)
+            cursor_y -= 16
+        elif level == 1:
+            # Category with page number and dot leader
+            c.setFont("Helvetica-Bold", 9.5)
+            c.setFillColorRGB(0, 0, 0)
+            label_w = c.stringWidth(label, "Helvetica-Bold", 9.5)
+            page_str = str(page_num)
+            page_w = c.stringWidth(page_str, "Helvetica-Bold", 9.5)
+            c.drawString(MARGIN + 10, cursor_y, label)
+            c.drawRightString(PAGE_W - MARGIN, cursor_y, page_str)
+            # Dot leader
+            c.setFont("Helvetica", 8)
+            c.setFillColorRGB(0.5, 0.5, 0.5)
+            dot_start = MARGIN + 14 + label_w
+            dot_end = PAGE_W - MARGIN - page_w - 4
+            dots = ""
+            x = dot_start
+            while x < dot_end:
+                dots += " ."
+                x += c.stringWidth(" .", "Helvetica", 8)
+            c.drawString(dot_start, cursor_y, dots)
+            cursor_y -= 14
 
-    # ── Scale Pages ───────────────────────────────────────────────
-    scale_height = STAFF_LINE_SPACING * 4 + STAFF_LINE_SPACING * 6  # staff + padding
+            # Scale names listed inline below
+            if scale_names:
+                c.setFont("Helvetica", 7.5)
+                c.setFillColorRGB(0.35, 0.35, 0.35)
+                names_str = ", ".join(scale_names)
+                max_w = PAGE_W - 2 * MARGIN - 30
+                words = names_str.split(", ")
+                line = ""
+                for word in words:
+                    test = line + (", " if line else "") + word
+                    if c.stringWidth(test, "Helvetica", 7.5) > max_w and line:
+                        c.drawString(MARGIN + 20, cursor_y, line)
+                        cursor_y -= 11
+                        line = word
+                    else:
+                        line = test
+                if line:
+                    c.drawString(MARGIN + 20, cursor_y, line)
+                    cursor_y -= 11
+                cursor_y -= 3
+            c.setFillColorRGB(0, 0, 0)
+
+def gen_content(c, tracker):
+    """Generate all scale and chord content pages."""
+    scale_height = STAFF_LINE_SPACING * 4 + STAFF_LINE_SPACING * 6
     scales_per_page = 5
 
     for inst_name, inst_semi, inst_letter in INSTRUMENTS:
+        tracker.add_toc_entry(0, inst_name)
+
         for cat_name, scales in PARSED_CATEGORIES:
+            scale_names_in_cat = [s[0] for s in scales]
+            first_page_of_cat = True
+
             for scale_name, chord_sym, concert_notes, concert_desc_notes in scales:
-                # Extract chord symbol suffix (everything after the root)
                 root_end = 1
                 while root_end < len(chord_sym) and chord_sym[root_end] in ('b', '#', '\u266d', '\u266f'):
                     root_end += 1
                 suffix = chord_sym[root_end:]
-
-                # Compute interval string (same for all keys)
                 interval_str = get_interval_str(concert_notes)
 
-                # Generate this scale in all 12 written keys
                 count_on_page = 0
                 cursor_y = None
                 for key_name, key_semi, key_letter_off in TWELVE_KEYS:
@@ -477,41 +551,34 @@ def generate_pdf(output_path):
                         subtitle = f"{cat_name} \u2014 {scale_name}"
                         if cursor_y is not None:
                             subtitle += " (cont.)"
-                        cursor_y = new_page_with_header(c, page_title, subtitle)
+                        cursor_y = new_page_with_header(c, tracker, page_title, subtitle)
+                        if first_page_of_cat:
+                            tracker.add_toc_entry(1, cat_name, scale_names_in_cat)
+                            first_page_of_cat = False
                         count_on_page = 0
 
-                    # Build scale in this written key by transposing from C
                     transposed = transpose_scale(concert_notes, key_semi, key_letter_off)
-
-                    # Build descending notes if this scale has a custom descending form
                     transposed_desc = None
                     if concert_desc_notes:
                         transposed_desc = transpose_scale(concert_desc_notes, key_semi, key_letter_off)
 
-                    # Build chord symbol with this key's root
                     root_l, root_a = parse_note("C")
                     new_root_l, new_root_a = transpose_note(root_l, root_a, key_semi, key_letter_off)
                     written_chord_sym = note_display(new_root_l, new_root_a) + suffix
 
-                    # Concert key label
                     ck = concert_key_label(key_name, inst_semi, inst_letter)
                     label_with_concert = f"(Concert: {ck})"
 
-                    # Choose octave and compute positions
                     start_oct = choose_octave_for_scale(transposed, inst_name)
                     notes_with_oct = compute_note_positions(transposed, start_oct)
 
-                    # Compute descending positions if custom
                     desc_with_oct = None
                     if transposed_desc:
-                        # Descending starts from the top octave of the ascending scale
-                        top_oct = notes_with_oct[-1][2]  # octave of the top note
+                        top_oct = notes_with_oct[-1][2]
                         desc_with_oct = compute_note_positions_descending(transposed_desc, top_oct)
 
-                    # Calculate staff bottom y
                     staff_bottom = cursor_y - STAFF_LINE_SPACING * 4
                     note_x_start = STAFF_LEFT + 20
-
                     draw_scale_on_staff(c, notes_with_oct, staff_bottom, note_x_start,
                                        scale_name, written_chord_sym, interval_str,
                                        concert_label=label_with_concert,
@@ -521,56 +588,48 @@ def generate_pdf(output_path):
                     count_on_page += 1
 
     # ── Chord Reference Pages ─────────────────────────────────────
+    row_height = 14
     for inst_name, semi_offset, letter_offset in INSTRUMENTS:
-        cursor_y = new_page_with_header(c, f"Chord Reference \u2014 {inst_name}",
-                                        "Chord tones for all 12 keys")
+        cursor_y = new_page_with_header(c, tracker,
+            f"Chord Reference \u2014 {inst_name}", "Chord tones for all 12 keys")
+        tracker.add_toc_entry(1, "Chord Reference")
 
-        # Table header
-        c.setFont("Helvetica-Bold", 8)
         col_x = MARGIN
-        col_w = (PAGE_W - 2 * MARGIN) / 6  # Key, Maj7, Dom7, Min7, HalfDim, Dim7
-
+        col_w = (PAGE_W - 2 * MARGIN) / 6
         headers = ["Key", "Major 7th (\u0394)", "Dom. 7th (7)", "Minor 7th (\u20137)",
                    "Half Dim. (\u00d8)", "Dim. 7th (\u00b0)"]
+
+        c.setFont("Helvetica-Bold", 8)
         for i, h in enumerate(headers):
             c.drawString(col_x + i * col_w, cursor_y, h)
-
         cursor_y -= 4
         c.setLineWidth(0.5)
         c.line(MARGIN, cursor_y, PAGE_W - MARGIN, cursor_y)
-        cursor_y -= 12
-
-        c.setFont("Helvetica", 7.5)
-        row_height = 14
+        cursor_y -= row_height
 
         for key_idx, (key_name, key_semi, key_letter_off) in enumerate(TWELVE_KEYS):
             if cursor_y < MARGIN + 30:
-                cursor_y = new_page_with_header(c, f"Chord Reference \u2014 {inst_name}",
-                                                "Chord tones for all 12 keys (cont.)")
-                # Redraw headers
+                cursor_y = new_page_with_header(c, tracker,
+                    f"Chord Reference \u2014 {inst_name}", "Chord tones for all 12 keys (cont.)")
                 c.setFont("Helvetica-Bold", 8)
                 for i, h in enumerate(headers):
                     c.drawString(col_x + i * col_w, cursor_y, h)
                 cursor_y -= 4
                 c.line(MARGIN, cursor_y, PAGE_W - MARGIN, cursor_y)
                 cursor_y -= row_height
-                c.setFont("Helvetica", 7.5)
 
-            # Alternating row background (draw BEFORE text so it doesn't cover it)
             if key_idx % 2 == 0:
                 c.saveState()
                 c.setFillColorRGB(0.93, 0.93, 0.93)
                 c.rect(MARGIN, cursor_y - 4, PAGE_W - 2 * MARGIN, row_height, fill=1, stroke=0)
                 c.restoreState()
 
-            # Transpose key name for instrument
             inst_key = transpose_root_name(key_name, semi_offset, letter_offset)
             c.setFont("Helvetica-Bold", 8.5)
             c.drawString(col_x, cursor_y, inst_key)
             c.setFont("Helvetica", 8)
 
             for ci, (chord_type_name, chord_suffix, chord_tones) in enumerate(CHORD_TYPES):
-                # Transpose chord tones from C to this key, then to instrument
                 total_semi = (key_semi + semi_offset) % 12
                 total_letter = (key_letter_off + letter_offset) % 7
                 transposed_tones = transpose_chord_tones(chord_tones, total_semi, total_letter)
@@ -579,8 +638,57 @@ def generate_pdf(output_path):
 
             cursor_y -= row_height
 
+def generate_pdf(output_path):
+    import io
+
+    # Pass 1: dry run to collect TOC entries and page counts
+    buf = io.BytesIO()
+    c1 = canvas.Canvas(buf, pagesize=letter)
+    t1 = PageTracker()
+    gen_content(c1, t1)
+    toc_data = t1.toc_entries
+
+    # Estimate TOC pages needed
+    toc_line_count = 0
+    for level, label, names, pn in toc_data:
+        if level == 0:
+            toc_line_count += 3
+        else:
+            toc_line_count += 2
+            if names:
+                toc_line_count += max(1, len(", ".join(names)) // 80) + 1
+    toc_pages = max(1, (toc_line_count + 44) // 45)
+
+    # Adjust page numbers: content pages shift by toc_pages
+    adjusted_toc = [(lv, lb, nm, pn + toc_pages) for lv, lb, nm, pn in toc_data]
+
+    # Pass 2: generate final PDF
+    c = canvas.Canvas(output_path, pagesize=letter)
+    tracker = PageTracker()
+
+    # Title page (page 0, no number)
+    c.setFont("Helvetica-Bold", 24)
+    c.drawCentredString(PAGE_W / 2, PAGE_H / 2 + 60, "Scale & Chord Reference")
+    c.setFont("Helvetica", 16)
+    c.drawCentredString(PAGE_W / 2, PAGE_H / 2 + 30, "for Alto Saxophone & Tenor Saxophone")
+    c.setFont("Helvetica", 11)
+    c.drawCentredString(PAGE_W / 2, PAGE_H / 2 - 10, "Based on the FQBK Handbook Scale Syllabus")
+    c.setFont("Helvetica", 9)
+    c.drawCentredString(PAGE_W / 2, PAGE_H / 2 - 40, "All scales in all 12 keys, transposed for each instrument.")
+    c.drawCentredString(PAGE_W / 2, PAGE_H / 2 - 55, "Note names shown below each notehead for reference.")
+    c.setFont("Helvetica", 8)
+    c.drawCentredString(PAGE_W / 2, MARGIN + 20,
+        "Legend: W = Whole Step, H = Half Step, m3 = Minor Third (3 half steps)")
+
+    # TOC
+    draw_toc(c, tracker, adjusted_toc)
+
+    # Content
+    gen_content(c, tracker)
+
     c.save()
     print(f"PDF saved to: {output_path}")
+    print(f"Total pages: {tracker.page_num} (incl. title + {toc_pages} TOC pages)")
 
 if __name__ == "__main__":
     output = r"C:\Users\nicwo\Downloads\Scale_and_Chord_Reference_Saxophones.pdf"
