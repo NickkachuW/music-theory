@@ -119,8 +119,8 @@ SCALE_CATEGORIES = [
         ("Blues Scale", "C\u20137", "C Eb F F# G Bb C"),
         ("Harmonic Minor", "C\u2013\u0394b6", "C D Eb F G Ab B C"),
         ("Diminished (begin with W)", "C\u20137", "C D Eb F F# G# A B C"),
-        ("Phrygian", "C\u2013b9b6", "C Db Eb F G Ab Bb C"),
-        ("Pure / Natural Minor (Aeolian)", "C\u2013b6", "C D Eb F G Ab Bb C"),
+        ("Phrygian", "C\u20137b9", "C Db Eb F G Ab Bb C"),
+        ("Pure / Natural Minor (Aeolian)", "C\u20137", "C D Eb F G Ab Bb C"),
     ]),
     ("4. HALF DIMINISHED SCALES", [
         ("Half Diminished (Locrian)", "C\u00d8", "C Db Eb F Gb Ab Bb C"),
@@ -159,7 +159,7 @@ CHORD_TYPES = [
 # double sharps/flats. Each entry: (name, semitone_offset_from_C, letter_offset_from_C)
 TWELVE_KEYS = [
     ("C",  0, 0), ("Db", 1, 1), ("D",  2, 1), ("Eb", 3, 2), ("E",  4, 2),
-    ("F",  5, 3), ("Gb", 6, 4), ("G",  7, 4), ("Ab", 8, 5),
+    ("F",  5, 3), ("F#", 6, 3), ("G",  7, 4), ("Ab", 8, 5),
     ("A",  9, 5), ("Bb",10, 6), ("B", 11, 6),
 ]
 
@@ -691,5 +691,6 @@ def generate_pdf(output_path):
     print(f"Total pages: {tracker.page_num} (incl. title + {toc_pages} TOC pages)")
 
 if __name__ == "__main__":
-    output = r"C:\Users\nicwo\Downloads\Scale_and_Chord_Reference_Saxophones.pdf"
+    output = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "Scale_and_Chord_Reference_Saxophones.pdf")
     generate_pdf(output)
