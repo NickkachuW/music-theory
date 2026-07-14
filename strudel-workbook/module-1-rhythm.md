@@ -405,4 +405,4 @@ When that's comfortable, you're done with Module 1 — Module 2 gives you actual
 3-2/2-3 (tresillo is its 3-side); rumba clave; marcato vs sincopa; euclidean rhythms as
 even-distribution.
 
-→ **Next: [Module 2 — Scale Lab](module-2-scale-lab.md)** *(coming soon)*
+→ **Next: [Module 2 — Scale Lab](module-2-scale-lab.md)**
