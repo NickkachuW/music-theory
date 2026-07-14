@@ -51,7 +51,10 @@ n("0 1 2 3 4 5 6 7").scale("C4:major").sound("piano")
 ```
 [▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDkwLzQpCm4oIjAgMSAyIDMgNCA1IDYgNyIpLnNjYWxlKCJDNDptYWpvciIpLnNvdW5kKCJwaWFubyIp)
 
-(There's a shorthand: `n("0 .. 7")` — same thing.) The book gives major as `W W H W W W H`. Hear it:
+(There's a shorthand: `n("0 .. 7")` — same thing.) The book gives major as `W W H W W W H` — five
+whole steps, two half steps. But *where* are the half steps? This snippet plays one pair of
+neighboring degrees per bar (that's all the `<[ ] [ ] [ ]>` is doing — three bars, two half notes
+each) so you can compare the step sizes directly:
 
 ```js
 setcpm(60/4)
@@ -59,9 +62,13 @@ n("<[2 3] [6 7] [0 1]>").scale("C4:major").sound("piano")
 ```
 [▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDYwLzQpCm4oIjxbMiAzXSBbNiA3XSBbMCAxXT4iKS5zY2FsZSgiQzQ6bWFqb3IiKS5zb3VuZCgicGlhbm8iKQ%3D%3D)
 
-Bar 1: degrees 3→4 (E–F, a half step). Bar 2: 7→8 (B–C, half step). Bar 3: 1→2 (C–D, a *whole*
-step for comparison). The two half steps are the scale's fingerprint — everything else is whole
-steps.
+- Bar 1: `n` 2→3 = **E→F** — a half step. Small, leaning, almost touching.
+- Bar 2: `n` 6→7 = **B→C** — the other half step.
+- Bar 3: `n` 0→1 = **C→D** — a whole step, for comparison. Hear how much roomier it is.
+
+Those two half-step locations are the major scale's fingerprint — every other neighbor pair is a
+whole step (try a few: edit the brackets). When Session 2.3 swaps scales, what actually changes is
+where the half steps sit.
 
 ### 2.1.3 The drone — your new practice partner
 
