@@ -18,6 +18,13 @@ Category 3 (Minor). Each horn exercise names the scale and *written* key to look
 > + 1*. It feels wrong for a day and then becomes automatic — when this workbook says "the 6th",
 > the code says `5`.
 
+> **Seeing pitch.** Two visual tools join Module 1's punchcard, both chainable onto any line and
+> both sound-neutral. `._pianoroll()` draws a scrolling piano roll under the line — pitch as
+> height, so interval sizes become *distances you can see*. `._scope()` draws a live oscilloscope
+> of the actual waveform — you'll use it to watch a filter reshape a sawtooth in 2.1.3. (The
+> versions without the underscore, like `.pianoroll()`, paint the whole page background instead —
+> try it once, it's fun.)
+
 ---
 
 ## Session 2.1 — Numbers into notes
@@ -58,13 +65,16 @@ each) so you can compare the step sizes directly:
 
 ```js
 setcpm(60/4)
-n("<[2 3] [6 7] [0 1]>").scale("C4:major").sound("piano")
+n("<[2 3] [6 7] [0 1]>").scale("C4:major").sound("piano")._pianoroll()
 ```
-[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDYwLzQpCm4oIjxbMiAzXSBbNiA3XSBbMCAxXT4iKS5zY2FsZSgiQzQ6bWFqb3IiKS5zb3VuZCgicGlhbm8iKQ%3D%3D)
+[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDYwLzQpCm4oIjxbMiAzXSBbNiA3XSBbMCAxXT4iKS5zY2FsZSgiQzQ6bWFqb3IiKS5zb3VuZCgicGlhbm8iKS5fcGlhbm9yb2xsKCk%3D)
 
 - Bar 1: `n` 2→3 = **E→F** — a half step. Small, leaning, almost touching.
 - Bar 2: `n` 6→7 = **B→C** — the other half step.
 - Bar 3: `n` 0→1 = **C→D** — a whole step, for comparison. Hear how much roomier it is.
+
+The piano roll makes this literal: the half-step pairs sit one pixel-row apart, the whole-step
+pair visibly further. Interval size = vertical distance, from now on.
 
 Those two half-step locations are the major scale's fingerprint — every other neighbor pair is a
 whole step (try a few: edit the brackets). When Session 2.3 swaps scales, what actually changes is
@@ -78,13 +88,20 @@ sustained note:
 ```js
 setcpm(90/4)
 $: n("0 1 2 3 4 5 6 7").scale("C4:major").sound("piano")
-$: note("c2").sound("sawtooth").lpf(400).gain(.35)
+$: note("c2").sound("sawtooth").lpf("<400 800 2000>").gain(.35)._scope()
 ```
-[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDkwLzQpCiQ6IG4oIjAgMSAyIDMgNCA1IDYgNyIpLnNjYWxlKCJDNDptYWpvciIpLnNvdW5kKCJwaWFubyIpCiQ6IG5vdGUoImMyIikuc291bmQoInNhd3Rvb3RoIikubHBmKDQwMCkuZ2FpbiguMzUp)
+[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDkwLzQpCiQ6IG4oIjAgMSAyIDMgNCA1IDYgNyIpLnNjYWxlKCJDNDptYWpvciIpLnNvdW5kKCJwaWFubyIpCiQ6IG5vdGUoImMyIikuc291bmQoInNhd3Rvb3RoIikubHBmKCI8NDAwIDgwMCAyMDAwPiIpLmdhaW4oLjM1KS5fc2NvcGUoKQ%3D%3D)
 
-`lpf(400)` is a low-pass filter — it just mellows the sawtooth into a usable drone. Listen to how
-degree `6` (the 7th) *leans* toward the octave while `4` (the fifth) sits perfectly still. Tension
-and resolution against a drone is the fastest ear-training there is.
+`lpf()` is a low-pass filter, and the `._scope()` shows you exactly what it does. A raw sawtooth
+wave is a jagged ramp — that jaggedness *is* its buzzy brightness (sharp corners = strong high
+harmonics). The pattern `"<400 800 2000>"` sweeps the filter cutoff one value per bar: at 400 the
+corners are sanded off and the wave is nearly a smooth hump (mellow, drone-friendly); by 2000 the
+ramp shape comes back and so does the buzz. Shape = tone. Watch a few bars, then park it on
+`lpf(400)` for practicing.
+
+Now to the ear-training part: listen to how degree `6` (the 7th) *leans* toward the octave while
+`4` (the fifth) sits perfectly still against the drone. Tension and resolution against a drone is
+the fastest ear-training there is.
 
 ### Challenges 2.1
 
@@ -220,10 +237,10 @@ the minor scales disagree — cycled through three scales, one bar each:
 
 ```js
 setcpm(80/4)
-$: n("0 2 4 5 6 5 4 2").scale("<D4:dorian D4:aeolian D4:harmonic:minor>").sound("piano")
+$: n("0 2 4 5 6 5 4 2").scale("<D4:dorian D4:aeolian D4:harmonic:minor>").sound("piano")._pianoroll()
 $: note("d2").sound("sawtooth").lpf(400).gain(.35)
 ```
-[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDgwLzQpCiQ6IG4oIjAgMiA0IDUgNiA1IDQgMiIpLnNjYWxlKCI8RDQ6ZG9yaWFuIEQ0OmFlb2xpYW4gRDQ6aGFybW9uaWM6bWlub3I%2BIikuc291bmQoInBpYW5vIikKJDogbm90ZSgiZDIiKS5zb3VuZCgic2F3dG9vdGgiKS5scGYoNDAwKS5nYWluKC4zNSk%3D)
+[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDgwLzQpCiQ6IG4oIjAgMiA0IDUgNiA1IDQgMiIpLnNjYWxlKCI8RDQ6ZG9yaWFuIEQ0OmFlb2xpYW4gRDQ6aGFybW9uaWM6bWlub3I%2BIikuc291bmQoInBpYW5vIikuX3BpYW5vcm9sbCgpCiQ6IG5vdGUoImQyIikuc291bmQoInNhd3Rvb3RoIikubHBmKDQwMCkuZ2FpbiguMzUp)
 
 **Identical code, three musics.** What changed, bar by bar:
 
@@ -234,7 +251,9 @@ $: note("d2").sound("sawtooth").lpf(400).gain(.35)
 | Harmonic minor | b6 | **natural 7** | dramatic, Old-World — tango's home | Harmonic Minor |
 
 Listen for bar 1's `5` sounding *sweet*, bar 2's `5` sagging darker, and bar 3's `6` yanking hard
-up toward the root.
+up toward the root. On the piano roll the riff redraws itself each bar with the same *shape* but
+different heights at positions 4 and 6 — the two notes sliding down or up a row are precisely the
+6th and 7th from the table.
 
 ### 2.3.2 The augmented 2nd
 
@@ -243,12 +262,13 @@ LEARNINGS notes call the defining tango sound. Isolate it:
 
 ```js
 setcpm(60/4)
-$: n("5 6 7 ~").scale("A3:harmonic:minor").sound("piano")
+$: n("5 6 7 ~").scale("A3:harmonic:minor").sound("piano")._pianoroll()
 $: note("a1").sound("sawtooth").lpf(400).gain(.35)
 ```
-[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDYwLzQpCiQ6IG4oIjUgNiA3IH4iKS5zY2FsZSgiQTM6aGFybW9uaWM6bWlub3IiKS5zb3VuZCgicGlhbm8iKQokOiBub3RlKCJhMSIpLnNvdW5kKCJzYXd0b290aCIpLmxwZig0MDApLmdhaW4oLjM1KQ%3D%3D)
+[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDYwLzQpCiQ6IG4oIjUgNiA3IH4iKS5zY2FsZSgiQTM6aGFybW9uaWM6bWlub3IiKS5zb3VuZCgicGlhbm8iKS5fcGlhbm9yb2xsKCkKJDogbm90ZSgiYTEiKS5zb3VuZCgic2F3dG9vdGgiKS5scGYoNDAwKS5nYWluKC4zNSk%3D)
 
-In A harmonic minor that's **F → G# → A**: the exotic leap, then the half-step snap home. No other
+In A harmonic minor that's **F → G# → A**: the exotic leap, then the half-step snap home. The
+piano roll shows it as a big jump followed by a tiny one — three rows up, then one. No other
 common scale contains this. Once you can hear it, you'll notice it in every tango ever written.
 
 ### Challenges 2.3
@@ -360,14 +380,15 @@ only the **drone** moves:
 
 ```js
 setcpm(80/4)
-$: n("0 1 2 3 4 5 6 7").scale("C4:major").sound("piano")
+$: n("0 1 2 3 4 5 6 7").scale("C4:major").sound("piano")._pianoroll()
 $: note("<c2 d2 e2>").sound("sawtooth").lpf(400).gain(.4)
 ```
-[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDgwLzQpCiQ6IG4oIjAgMSAyIDMgNCA1IDYgNyIpLnNjYWxlKCJDNDptYWpvciIpLnNvdW5kKCJwaWFubyIpCiQ6IG5vdGUoIjxjMiBkMiBlMj4iKS5zb3VuZCgic2F3dG9vdGgiKS5scGYoNDAwKS5nYWluKC40KQ%3D%3D)
+[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDgwLzQpCiQ6IG4oIjAgMSAyIDMgNCA1IDYgNyIpLnNjYWxlKCJDNDptYWpvciIpLnNvdW5kKCJwaWFubyIpLl9waWFub3JvbGwoKQokOiBub3RlKCI8YzIgZDIgZTI%2BIikuc291bmQoInNhd3Rvb3RoIikubHBmKDQwMCkuZ2FpbiguNCk%3D)
 
 Bar 1 is C major (ionian). Bar 2: *nothing about the melody changed*, but home is now D — you're
-hearing **D dorian**. Bar 3: home is E — **E phrygian**, instantly darker. A mode isn't a new set
-of notes; it's a new center of gravity. The drone *is* the mode.
+hearing **D dorian**. Bar 3: home is E — **E phrygian**, instantly darker. The piano roll is the
+receipt: an identical picture every single bar, while the mood transforms underneath it. A mode
+isn't a new set of notes; it's a new center of gravity. The drone *is* the mode.
 
 ### 2.5.2 The same thing, named
 
@@ -454,13 +475,14 @@ The classic **1-2-3-5 cell** (degrees `0 1 2 4`), walked up the scale one step p
 
 ```js
 setcpm(100/4)
-$: n("0 1 2 4").add("<0 1 2 3 4 5 6 7>").scale("D4:dorian").sound("piano")
+$: n("0 1 2 4").add("<0 1 2 3 4 5 6 7>").scale("D4:dorian").sound("piano")._pianoroll()
 $: note("d2").sound("sawtooth").lpf(400).gain(.3)
 ```
-[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDEwMC80KQokOiBuKCIwIDEgMiA0IikuYWRkKCI8MCAxIDIgMyA0IDUgNiA3PiIpLnNjYWxlKCJENDpkb3JpYW4iKS5zb3VuZCgicGlhbm8iKQokOiBub3RlKCJkMiIpLnNvdW5kKCJzYXd0b290aCIpLmxwZig0MDApLmdhaW4oLjMp)
+[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDEwMC80KQokOiBuKCIwIDEgMiA0IikuYWRkKCI8MCAxIDIgMyA0IDUgNiA3PiIpLnNjYWxlKCJENDpkb3JpYW4iKS5zb3VuZCgicGlhbm8iKS5fcGlhbm9yb2xsKCkKJDogbm90ZSgiZDIiKS5zb3VuZCgic2F3dG9vdGgiKS5scGYoNDAwKS5nYWluKC4zKQ%3D%3D)
 
 `.add("<...>")` bumps the whole cell by one scale degree each cycle — eight bars later you've
-sequenced the cell through the entire scale, diatonically correct at every step. This exact
+sequenced the cell through the entire scale, diatonically correct at every step. The piano roll
+draws it as a staircase: the same four-note shape stamped one row higher each bar. This exact
 exercise fills pages of jazz technique books. You just wrote it in one line, in any scale, in any
 key.
 
@@ -530,11 +552,11 @@ if you can hear it, you'll find it on the horn.
 setcpm(100/4)
 $: n("0 1 2 4").add("<0 1 2 3 4 5 6 7>")
    .scale("<D4:dorian D4:harmonic:minor D4:minor:pentatonic>/8")
-   .sound("piano")
+   .sound("piano")._pianoroll()
 $: note("d2").sound("sawtooth").lpf(400).gain(.3)
 $: sound("bd@3 bd@3 bd@2").bank("RolandTR808").gain(.5)
 ```
-[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDEwMC80KQokOiBuKCIwIDEgMiA0IikuYWRkKCI8MCAxIDIgMyA0IDUgNiA3PiIpCiAgIC5zY2FsZSgiPEQ0OmRvcmlhbiBENDpoYXJtb25pYzptaW5vciBENDptaW5vcjpwZW50YXRvbmljPi84IikKICAgLnNvdW5kKCJwaWFubyIpCiQ6IG5vdGUoImQyIikuc291bmQoInNhd3Rvb3RoIikubHBmKDQwMCkuZ2FpbiguMykKJDogc291bmQoImJkQDMgYmRAMyBiZEAyIikuYmFuaygiUm9sYW5kVFI4MDgiKS5nYWluKC41KQ%3D%3D)
+[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDEwMC80KQokOiBuKCIwIDEgMiA0IikuYWRkKCI8MCAxIDIgMyA0IDUgNiA3PiIpCiAgIC5zY2FsZSgiPEQ0OmRvcmlhbiBENDpoYXJtb25pYzptaW5vciBENDptaW5vcjpwZW50YXRvbmljPi84IikKICAgLnNvdW5kKCJwaWFubyIpLl9waWFub3JvbGwoKQokOiBub3RlKCJkMiIpLnNvdW5kKCJzYXd0b290aCIpLmxwZig0MDApLmdhaW4oLjMpCiQ6IHNvdW5kKCJiZEAzIGJkQDMgYmRAMiIpLmJhbmsoIlJvbGFuZFRSODA4IikuZ2FpbiguNSk%3D)
 
 For mine: dorian turns the cell into a warm montuno fragment; harmonic minor makes bars 5–6
 suddenly Andalusian as the aug 2nd enters the cell; pentatonic swallows the passing tones and
@@ -564,6 +586,8 @@ again.
 | `.superimpose(f)` | parallel transformed copy | `.superimpose(x=>x.add(2))` |
 | `<a b>/n` | stretch alternation to n cycles each | `"<X Y>/8"` |
 | patterned scales | scale changes are patterns too | `.scale("<D4:dorian G4:dorian>")` |
+| `._pianoroll()` | piano roll under the line (visual only) | `.sound("piano")._pianoroll()` |
+| `._scope()` | live oscilloscope of the waveform | `.sound("sawtooth")._scope()` |
 
 **Theory vocabulary:** degrees as numbers (0-indexed); W-W-H-W-W-W-H and where half steps live;
 pentatonics as "the scale minus its half steps"; the minor family's 6th/7th fingerprint; the

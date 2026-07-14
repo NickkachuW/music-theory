@@ -20,6 +20,12 @@ yourself** — the ▶ links are for checking your result against mine, not a su
 *cycles per minute*, so we write `setcpm(90/4)` for 90 bpm — 90 beats, 4 to a bar. Keep this line
 at the top of everything you write.
 
+> **Seeing the rhythm:** Strudel highlights each mini-notation event as it fires — watch the
+> string while it plays. For a bird's-eye view, chain `._punchcard({labels:1})` onto any pattern
+> line: a scrolling grid appears under that line, one row per sound, one dot per hit. Rhythm as
+> geometry. You'll see it in action from Session 1.2; add it to (or remove it from) any line you
+> like — it changes nothing about the sound.
+
 ---
 
 ## Session 1.1 — The REPL & mini-notation
@@ -159,12 +165,14 @@ The fundamental Afro-Cuban cell. On an eighth-note grid, hits on **1, the and-of
 
 ```js
 setcpm(90/4)
-$: sound("bd ~ ~ bd ~ ~ bd ~")
+$: sound("bd ~ ~ bd ~ ~ bd ~")._punchcard({labels:1})
 $: sound("hh*8").gain(.5)
 ```
-[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDkwLzQpCiQ6IHNvdW5kKCJiZCB%2BIH4gYmQgfiB%2BIGJkIH4iKQokOiBzb3VuZCgiaGgqOCIpLmdhaW4oLjUp)
+[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDkwLzQpCiQ6IHNvdW5kKCJiZCB%2BIH4gYmQgfiB%2BIGJkIH4iKS5fcHVuY2hjYXJkKHtsYWJlbHM6MX0pCiQ6IHNvdW5kKCJoaCo4IikuZ2FpbiguNSk%3D)
 
-Count it against the hats: **ONE**-and-two-**AND**-three-**FOUR**-and. Three, three, two.
+Count it against the hats: **ONE**-and-two-**AND**-three-**FOUR**-and. Three, three, two. And
+look at the punchcard grid under the first line: two gaps of three, one gap of two — the 3+3+2 is
+*visible* as uneven spacing between the dots.
 
 Mini-notation has a more honest spelling of the same rhythm — `@` stretches an event's share of
 the bar:
@@ -185,13 +193,15 @@ contents one per cycle. Son clave **3-2**:
 
 ```js
 setcpm(90/4)
-$: sound("<[rim ~ ~ rim ~ ~ rim ~] [~ ~ rim ~ rim ~ ~ ~]>").bank("RolandTR808")
+$: sound("<[rim ~ ~ rim ~ ~ rim ~] [~ ~ rim ~ rim ~ ~ ~]>").bank("RolandTR808")._punchcard({labels:1})
 $: sound("hh*8").gain(.4)
 ```
-[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDkwLzQpCiQ6IHNvdW5kKCI8W3JpbSB%2BIH4gcmltIH4gfiByaW0gfl0gW34gfiByaW0gfiByaW0gfiB%2BIH5dPiIpLmJhbmsoIlJvbGFuZFRSODA4IikKJDogc291bmQoImhoKjgiKS5nYWluKC40KQ%3D%3D)
+[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDkwLzQpCiQ6IHNvdW5kKCI8W3JpbSB%2BIH4gcmltIH4gfiByaW0gfl0gW34gfiByaW0gfiByaW0gfiB%2BIH5dPiIpLmJhbmsoIlJvbGFuZFRSODA4IikuX3B1bmNoY2FyZCh7bGFiZWxzOjF9KQokOiBzb3VuZCgiaGgqOCIpLmdhaW4oLjQp)
 
 Bar 1 (the **3-side**) is *exactly the tresillo* — that's not a coincidence, it's the genetic link.
-Bar 2 (the **2-side**) answers on beats 2 and 3. Count until you can sing it:
+Bar 2 (the **2-side**) answers on beats 2 and 3. The punchcard shows four bars at a time, so you
+can see the full two-bar shape repeat: tight cluster, then answer, then again. Count until you can
+sing it:
 `ONE-and-two-AND-three-FOUR-and | one-and-TWO-and-THREE-and-four-and`.
 
 **2-3 clave** is the same pattern with the bars swapped — swap the two bracket groups. Everything
@@ -294,10 +304,10 @@ Marcato vs sincopa is *the* expressive axis in tango accompaniment. Notice you n
 
 ```js
 setcpm(90/4)
-$: sound("bd(3,8)")
+$: sound("bd(3,8)")._punchcard({labels:1})
 $: sound("hh*8").gain(.4)
 ```
-[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDkwLzQpCiQ6IHNvdW5kKCJiZCgzLDgpIikKJDogc291bmQoImhoKjgiKS5nYWluKC40KQ%3D%3D)
+[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDkwLzQpCiQ6IHNvdW5kKCJiZCgzLDgpIikuX3B1bmNoY2FyZCh7bGFiZWxzOjF9KQokOiBzb3VuZCgiaGgqOCIpLmdhaW4oLjQp)
 
 Recognize it? **`(3,8)` is the tresillo.** The pattern you built by hand is what even-distribution
 mathematics produces on its own — which is precisely why it shows up in music worldwide. And
@@ -363,7 +373,9 @@ Build this from scratch, layer by layer, using `_$:` to mute while you work. Req
 4. **Cinquillo color layer** — euclidean, quiet, on cowbell or tom
 
 Then live-edit without stopping: flip the clave to 2-3 (does the groove change character?), mute
-layers 2 and 4 to hear the skeleton, push the tempo from 90 to 110.
+layers 2 and 4 to hear the skeleton, push the tempo from 90 to 110. Chain
+`._punchcard({labels:1})` onto any layer you want to inspect — with all four visible you can *see*
+which hits line up across layers and which deliberately don't.
 
 <details><summary>My version — compare, don't copy</summary>
 
@@ -400,6 +412,7 @@ When that's comfortable, you're done with Module 1 — Module 2 gives you actual
 | `.bank()` | choose drum machine | `.bank("RolandTR808")` |
 | `.gain()` | volume — takes patterns → accents | `.gain("1 .5 .7 .5")` |
 | `setcpm(bpm/4)` | tempo, one cycle = one 4/4 bar | `setcpm(90/4)` |
+| `._punchcard()` | rhythm grid under the line (visual only) | `._punchcard({labels:1})` |
 
 **Rhythm vocabulary:** tresillo (3+3+2) → habanera (+beat 3) → cinquillo (ornamented); son clave
 3-2/2-3 (tresillo is its 3-side); rumba clave; marcato vs sincopa; euclidean rhythms as
