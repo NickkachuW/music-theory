@@ -9,9 +9,12 @@ yourself** — the ▶ links are for checking your result against mine, not a su
 - `Ctrl+Enter` — evaluate / update the pattern (do this after every change, the loop updates live)
 - `Ctrl+.` — stop
 
-> **When something errors:** Strudel shows the error inline. The two you'll hit most: a typo in a
-> sound name (it tells you the name wasn't found — check spelling), and unbalanced brackets. The
-> loop keeps playing the last working version while you fix it.
+> **When something errors:** Strudel shows the error inline. The ones you'll hit most: a typo in a
+> sound name (it tells you the name wasn't found — check spelling), unbalanced brackets, and an
+> **empty `$:` line** left over while sketching layers — that one gives a cryptic
+> `unexpected token`. The `(22:3)` part of such an error is a line:column position in your whole
+> buffer, so look there, not at the line you just edited. The loop keeps playing the last working
+> version while you fix it.
 
 **Tempo convention for the whole workbook:** one cycle = one bar of 4/4. Strudel counts in
 *cycles per minute*, so we write `setcpm(90/4)` for 90 bpm — 90 beats, 4 to a bar. Keep this line
