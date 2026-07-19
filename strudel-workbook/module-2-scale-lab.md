@@ -600,4 +600,4 @@ again.
 pentatonics as "the scale minus its half steps"; the minor family's 6th/7th fingerprint; the
 augmented 2nd; modes as rotations (the drone proof); diatonic sequencing (cells, thirds).
 
-→ **Next: Module 3 — Chord Lab** *(coming soon)*
+→ **Next: [Module 3 — Chord Lab](module-3-chord-lab.md)**
