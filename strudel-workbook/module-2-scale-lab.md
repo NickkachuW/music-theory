@@ -443,17 +443,23 @@ read. This session's tools power the Module 6 scale-drill machine.*
 ### 2.6.1 Parallel thirds — `.add()` with a stack
 
 `.add()` shifts degrees *before* the scale maps them — so adding 2 adds a diatonic third, never a
-wrong note. And adding a stack `"0,2"` plays original + third together:
+wrong note. And adding a stack `n("0,2")` plays original + third together:
 
 ```js
 setcpm(80/4)
-$: n("0 1 2 3 4 5 6 7").add("0,2").scale("C4:major").sound("piano")
+$: n("0 1 2 3 4 5 6 7").add(n("0,2")).scale("C4:major").sound("piano")
 $: note("c2").sound("sawtooth").lpf(400).gain(.3)
 ```
-[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDgwLzQpCiQ6IG4oIjAgMSAyIDMgNCA1IDYgNyIpLmFkZCgiMCwyIikuc2NhbGUoIkM0Om1ham9yIikuc291bmQoInBpYW5vIikKJDogbm90ZSgiYzIiKS5zb3VuZCgic2F3dG9vdGgiKS5scGYoNDAwKS5nYWluKC4zKQ%3D%3D)
+[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDgwLzQpCiQ6IG4oIjAgMSAyIDMgNCA1IDYgNyIpLmFkZChuKCIwLDIiKSkuc2NhbGUoIkM0Om1ham9yIikuc291bmQoInBpYW5vIikKJDogbm90ZSgiYzIiKS5zb3VuZCgic2F3dG9vdGgiKS5scGYoNDAwKS5nYWluKC4zKQ%3D%3D)
 
-Diatonic harmony for one comma. Try `"0,4"` (fifths — instantly medieval) and `"0,2,4"` (full
-triads — a Module 3 spoiler).
+> **The `.add(n(...))` gotcha.** Whatever you add must be wrapped in `n()`, matching the pattern
+> you're adding to. A bare `.add(2)` does **nothing** — silently, no error. Strudel patterns carry
+> *labeled* values (`n`, `note`, `gain`, ...), and a naked `2` doesn't say which label it belongs
+> to, so the addition is skipped. If an `.add()` ever seems to have no effect, this is why. The
+> same rule applies elsewhere: `note("c2").add(note(12))`, `.add(gain(.2))`.
+
+Diatonic harmony for one comma. Try `n("0,4")` (fifths — instantly medieval) and `n("0,2,4")`
+(full triads — a Module 3 spoiler).
 
 ### 2.6.2 The canon trick — `.off()`
 
@@ -461,13 +467,13 @@ triads — a Module 3 spoiler).
 
 ```js
 setcpm(80/4)
-$: n("0 2 1 3 2 4 3 5").off(1/8, x=>x.add(2)).scale("C4:major").sound("piano").gain(.7)
+$: n("0 2 1 3 2 4 3 5").off(1/8, x=>x.add(n(2))).scale("C4:major").sound("piano").gain(.7)
 $: note("c2").sound("sawtooth").lpf(400).gain(.3)
 ```
-[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDgwLzQpCiQ6IG4oIjAgMiAxIDMgMiA0IDMgNSIpLm9mZigxLzgsIHg9PnguYWRkKDIpKS5zY2FsZSgiQzQ6bWFqb3IiKS5zb3VuZCgicGlhbm8iKS5nYWluKC43KQokOiBub3RlKCJjMiIpLnNvdW5kKCJzYXd0b290aCIpLmxwZig0MDApLmdhaW4oLjMp)
+[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDgwLzQpCiQ6IG4oIjAgMiAxIDMgMiA0IDMgNSIpLm9mZigxLzgsIHg9PnguYWRkKG4oMikpKS5zY2FsZSgiQzQ6bWFqb3IiKS5zb3VuZCgicGlhbm8iKS5nYWluKC43KQokOiBub3RlKCJjMiIpLnNvdW5kKCJzYXd0b290aCIpLmxwZig0MDApLmdhaW4oLjMp)
 
-The line chases itself in thirds — instant two-part counterpoint. (`.superimpose(x=>x.add(2))` is
-the same idea with no time shift — parallel motion instead of a chase.)
+The line chases itself in thirds — instant two-part counterpoint. (`.superimpose(x=>x.add(n(2)))`
+is the same idea with no time shift — parallel motion instead of a chase.)
 
 ### 2.6.3 The climbing cell — your technique book, generated
 
@@ -475,12 +481,12 @@ The classic **1-2-3-5 cell** (degrees `0 1 2 4`), walked up the scale one step p
 
 ```js
 setcpm(100/4)
-$: n("0 1 2 4").add("<0 1 2 3 4 5 6 7>").scale("D4:dorian").sound("piano")._pianoroll()
+$: n("0 1 2 4").add(n("<0 1 2 3 4 5 6 7>")).scale("D4:dorian").sound("piano")._pianoroll()
 $: note("d2").sound("sawtooth").lpf(400).gain(.3)
 ```
-[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDEwMC80KQokOiBuKCIwIDEgMiA0IikuYWRkKCI8MCAxIDIgMyA0IDUgNiA3PiIpLnNjYWxlKCJENDpkb3JpYW4iKS5zb3VuZCgicGlhbm8iKS5fcGlhbm9yb2xsKCkKJDogbm90ZSgiZDIiKS5zb3VuZCgic2F3dG9vdGgiKS5scGYoNDAwKS5nYWluKC4zKQ%3D%3D)
+[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDEwMC80KQokOiBuKCIwIDEgMiA0IikuYWRkKG4oIjwwIDEgMiAzIDQgNSA2IDc%2BIikpLnNjYWxlKCJENDpkb3JpYW4iKS5zb3VuZCgicGlhbm8iKS5fcGlhbm9yb2xsKCkKJDogbm90ZSgiZDIiKS5zb3VuZCgic2F3dG9vdGgiKS5scGYoNDAwKS5nYWluKC4zKQ%3D%3D)
 
-`.add("<...>")` bumps the whole cell by one scale degree each cycle — eight bars later you've
+`.add(n("<...>"))` bumps the whole cell by one scale degree each cycle — eight bars later you've
 sequenced the cell through the entire scale, diatonically correct at every step. The piano roll
 draws it as a staircase: the same four-note shape stamped one row higher each bar. This exact
 exercise fills pages of jazz technique books. You just wrote it in one line, in any scale, in any
@@ -506,19 +512,20 @@ D → G → C is root motion in fourths — the strongest progression in music a
    (`<7 6 5 ...>` or `.rev()` — compare both).
 2. Build the "1235" drill in harmonic minor and find the bar where the augmented 2nd lands inside
    the cell. It'll sound suddenly Middle-Eastern — which offset bar is it?
-3. Combine everything: climbing cell + `.off(1/8, x=>x.add(2))` canon + drone. Two-part
+3. Combine everything: climbing cell + `.off(1/8, x=>x.add(n(2)))` canon + drone. Two-part
    counterpoint etude, zero notes written by hand.
 
 <details><summary>Solution for 3 (and answer for 2)</summary>
 
-2: The bar with offset `4` — the cell becomes degrees `4 5 6 8`, spanning b6→7: the aug 2nd.
+2: Two bars, actually — offsets `4` and `5`. At offset 4 the cell is degrees `4 5 6 8` and at
+offset 5 it's `5 6 7 9`; both contain the b6→7 step, so the exotic color arrives twice in a row.
 
 ```js
 setcpm(100/4)
-$: n("0 1 2 4").add("<0 1 2 3 4 5 6 7>").off(1/8, x=>x.add(2)).scale("D4:harmonic:minor").sound("piano").gain(.7)
+$: n("0 1 2 4").add(n("<0 1 2 3 4 5 6 7>")).off(1/8, x=>x.add(n(2))).scale("D4:harmonic:minor").sound("piano").gain(.7)
 $: note("d2").sound("sawtooth").lpf(400).gain(.3)
 ```
-[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDEwMC80KQokOiBuKCIwIDEgMiA0IikuYWRkKCI8MCAxIDIgMyA0IDUgNiA3PiIpLm9mZigxLzgsIHg9PnguYWRkKDIpKS5zY2FsZSgiRDQ6aGFybW9uaWM6bWlub3IiKS5zb3VuZCgicGlhbm8iKS5nYWluKC43KQokOiBub3RlKCJkMiIpLnNvdW5kKCJzYXd0b290aCIpLmxwZig0MDApLmdhaW4oLjMp)
+[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDEwMC80KQokOiBuKCIwIDEgMiA0IikuYWRkKG4oIjwwIDEgMiAzIDQgNSA2IDc%2BIikpLm9mZigxLzgsIHg9PnguYWRkKG4oMikpKS5zY2FsZSgiRDQ6aGFybW9uaWM6bWlub3IiKS5zb3VuZCgicGlhbm8iKS5nYWluKC43KQokOiBub3RlKCJkMiIpLnNvdW5kKCJzYXd0b290aCIpLmxwZig0MDApLmdhaW4oLjMp)
 
 </details>
 
@@ -550,13 +557,13 @@ if you can hear it, you'll find it on the horn.
 
 ```js
 setcpm(100/4)
-$: n("0 1 2 4").add("<0 1 2 3 4 5 6 7>")
+$: n("0 1 2 4").add(n("<0 1 2 3 4 5 6 7>"))
    .scale("<D4:dorian D4:harmonic:minor D4:minor:pentatonic>/8")
    .sound("piano")._pianoroll()
 $: note("d2").sound("sawtooth").lpf(400).gain(.3)
 $: sound("bd@3 bd@3 bd@2").bank("RolandTR808").gain(.5)
 ```
-[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDEwMC80KQokOiBuKCIwIDEgMiA0IikuYWRkKCI8MCAxIDIgMyA0IDUgNiA3PiIpCiAgIC5zY2FsZSgiPEQ0OmRvcmlhbiBENDpoYXJtb25pYzptaW5vciBENDptaW5vcjpwZW50YXRvbmljPi84IikKICAgLnNvdW5kKCJwaWFubyIpLl9waWFub3JvbGwoKQokOiBub3RlKCJkMiIpLnNvdW5kKCJzYXd0b290aCIpLmxwZig0MDApLmdhaW4oLjMpCiQ6IHNvdW5kKCJiZEAzIGJkQDMgYmRAMiIpLmJhbmsoIlJvbGFuZFRSODA4IikuZ2FpbiguNSk%3D)
+[▶ Open in Strudel](https://strudel.cc/#c2V0Y3BtKDEwMC80KQokOiBuKCIwIDEgMiA0IikuYWRkKG4oIjwwIDEgMiAzIDQgNSA2IDc%2BIikpCiAgIC5zY2FsZSgiPEQ0OmRvcmlhbiBENDpoYXJtb25pYzptaW5vciBENDptaW5vcjpwZW50YXRvbmljPi84IikKICAgLnNvdW5kKCJwaWFubyIpLl9waWFub3JvbGwoKQokOiBub3RlKCJkMiIpLnNvdW5kKCJzYXd0b290aCIpLmxwZig0MDApLmdhaW4oLjMpCiQ6IHNvdW5kKCJiZEAzIGJkQDMgYmRAMiIpLmJhbmsoIlJvbGFuZFRSODA4IikuZ2FpbiguNSk%3D)
 
 For mine: dorian turns the cell into a warm montuno fragment; harmonic minor makes bars 5–6
 suddenly Andalusian as the aug 2nd enters the cell; pentatonic swallows the passing tones and
@@ -581,9 +588,9 @@ again.
 | `note()` | literal note names (for drones) | `note("c2")` |
 | `.sound()` / `.lpf()` | timbre; filter for drones | `.sound("sawtooth").lpf(400)` |
 | `.rev()` | reverse the cycle | `.rev()` |
-| `.add()` | shift degrees (stack `"0,2"` = harmony) | `.add("<0 1 2>")`, `.add("0,2")` |
-| `.off(t, f)` | delayed transformed copy | `.off(1/8, x=>x.add(2))` |
-| `.superimpose(f)` | parallel transformed copy | `.superimpose(x=>x.add(2))` |
+| `.add(n(...))` | shift degrees — addend must be `n()`-wrapped! | `.add(n("<0 1 2>"))`, `.add(n("0,2"))` |
+| `.off(t, f)` | delayed transformed copy | `.off(1/8, x=>x.add(n(2)))` |
+| `.superimpose(f)` | parallel transformed copy | `.superimpose(x=>x.add(n(2)))` |
 | `<a b>/n` | stretch alternation to n cycles each | `"<X Y>/8"` |
 | patterned scales | scale changes are patterns too | `.scale("<D4:dorian G4:dorian>")` |
 | `._pianoroll()` | piano roll under the line (visual only) | `.sound("piano")._pianoroll()` |
