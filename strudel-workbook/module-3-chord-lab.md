@@ -459,4 +459,4 @@ loop muted. That's the whole point of this module.
 the five chord types as one recipe on five scales; voicings & voice leading; guide tones (3rds &
 7ths); root motion in falling 4ths; chord-scale pairing, mild → spicy.
 
-→ **Next: Module 4 — Progressions** *(coming soon)*
+→ **Next: [Module 4 — Progressions](module-4-progressions.md)**
